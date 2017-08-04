@@ -30,18 +30,25 @@ app.use(bodyParser.urlencoded({
 app.use(express.static("public"));
 
 // Database connection configuration with mongoose ------- YES
-mongoose.connect("mongodb://localhost/week18day3mongoose");
-var db = mongoose.connection; //---- YES
+var db = "mongodb://localhost/newsmongo"||process.env.MONGODB_URI
+mongoose.connect(db, function(error){
+  if (error) {throw error}
+    else {
+      console.log("Mongoose connection successful.");
+    }
+
+}); //this is to connect with mongo local database, or if not, would look for process environment of mongo in production (meaning being run by another server, not local)
+
 
 // Show any mongoose errors
-db.on("error", function(error) {
-  console.log("Mongoose Error: ", error);
-});
+// db.on("error", function(error) {
+//   console.log("Mongoose Error: ", error);
+// });
 
 // Once logged in to the db through mongoose, log a success message ----- YES
-db.once("open", function() {
-  console.log("Mongoose connection successful.");
-});
+// db.once("open", function() {
+//   console.log("Mongoose connection successful.");
+// });
 
 
 // Routes
@@ -100,6 +107,10 @@ app.get("/articles", function(req, res) {
   });
 });
 
+
+
+
+
 // Grab an article by it's ObjectId
 app.get("/articles/:id", function(req, res) {
   // Using the id passed in the id parameter, prepare a query that finds the matching one in our db...
@@ -119,6 +130,25 @@ app.get("/articles/:id", function(req, res) {
   });
 });
 
+
+// Grab an notes by article id
+app.get("/notes/:id", function(req, res) {
+  // Using the id passed in the id parameter, prepare a query that finds the matching one in our db...
+  Notes.findOne({ "_id": req.params.id })
+  // ..and populate all of the notes associated with it
+  .populate("note")
+  // now, execute our query
+  .exec(function(error, doc) {
+    // Log any errors
+    if (error) {
+      console.log(error);
+    }
+    // Otherwise, send the doc to the browser as a json object
+    else {
+      res.json(doc);
+    }
+  });
+});
 
 // Create a new note or replace an existing note
 app.post("/addnote/:id", function(req, res) {
